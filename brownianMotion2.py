@@ -3,8 +3,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from drawnow import drawnow
-
 
 n=252 # full year in trading days
 dt=0.000001 # to be somewhat stable in time
@@ -13,12 +11,15 @@ x=pd.DataFrame()
 np.random.seed(1)
 
 def makeFig():
-	x.columns=['SAP','JPM','MSFT', 'AAPL']
-	plt.plot(x)
+	x.columns=['V','SAP','JPM','MSFT', 'AAPL','INTC','MITT']
+	#stock=['V','SAP','JPM','MSFT','AAPL','INTC','MITT']
+	#colstock=['blue','orange','green','red', 'pink','yellow', 'olive']
+	columncols = ['blue','orange','green','red','pink','yellow', 'olive']
+	x.plot(color = columncols)
 	plt.legend(x.columns)
 	plt.xlabel('t')
 	plt.ylabel('X')
-	plt.title('brownian motion finance model with average inputs')
+	plt.title('brownian motion finance model with averaged inputs')
 	plt.show()
 
 	
@@ -27,6 +28,18 @@ def GBM(x0, mu, sigma):
 	temp=pd.DataFrame(x0*step.cumprod())
 	global x
 	x=pd.concat([x,temp],axis=1)
+	
+# task: GBM with stochastic volatility
+def GMBstochVolal(x0,mu,sigma,sigmasigma):
+	"""drive sigma with own GBM using sigmasigma as sigma"""
+	return NotImplementedError
+
+# VISA
+x0 = 107.4# start value
+mu = 1.15# estimate
+sigma = 11.79# volatility
+
+GBM(x0, mu, sigma)
 	
 # SAP
 x0 = 113.21# start value
@@ -53,6 +66,20 @@ GBM(x0, mu, sigma)
 x0 = 173.332# start value
 mu = 1.184# estimate
 sigma = 15.6109# volatility
+
+GBM(x0, mu, sigma)
+
+# INTC
+x0 = 32.4168# start value
+mu = 1.0641# estimate
+sigma = 5.6348# volatility
+
+GBM(x0, mu, sigma)
+
+# MITT
+x0 = 17.23028# start value
+mu = 1.006119# estimate
+sigma = 0.9179# volatility
 
 GBM(x0, mu, sigma)
 
