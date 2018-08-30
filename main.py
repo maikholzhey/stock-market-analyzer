@@ -22,6 +22,7 @@ stockquantity = [1,1,1,1,1,1,1]
 # period of analysis
 end = datetime.now()
 start = end - timedelta(days=300)
+doc = False # write to historic log
 
 # some containers
 flist = [] # stock data series
@@ -36,6 +37,22 @@ prep = stockquantity	# portfolio representaion
 
 import numpy as np
 import pandas as pd
+
+
+def color_negative_red(val):
+    """
+    Takes a scalar and returns a string with
+    the css property `'color: red'` for negative
+    strings, black otherwise.
+    """
+    color = 'red' if val < 0 else 'black'
+    return 'color: %s' % color
+
+def red(a):
+	if int(np.multiply(a,1000000000)) < 0:
+		return u"<font color="+u"red"+"><b>"+str(a)+u"</b></font>"
+	else:
+		return str(a)
 
 def generate_html_with_table(data, columns_or_rows = 1, \
                              column_name_prefix = 'Column', \
@@ -97,14 +114,14 @@ def generate_html_with_table(data, columns_or_rows = 1, \
     column_names = [column_name_prefix + '_{}'.format(i) \
                     for i in np.arange(columns)]    
     # Convert the data into a numpy array    
-    data_array = np.array(data + ['']*(columns*rows - elements))
+    data_array = np.array(data + ['']*(columns*rows - elements))		
     if (span_axis == 0):
       data_array = data_array.reshape(columns,rows).T  
     else: #(span_axis == 0)
       data_array = data_array.reshape(rows,columns)  
     
     # Convert the numpy array into a pandas DataFrame
-    data_df = pd.DataFrame(data_array, columns = column_names)    
+    data_df = pd.DataFrame(data_array, columns = column_names) 
     # Create HTML from the DataFrame
     data_html = data_df.to_html()
     if showOutput:
@@ -175,13 +192,14 @@ for i in range(len(stock)):
 	
 	# dump analysis results
 	data.append(stock[i]) # label
-	data.append(str(popt[0])) # av daily revenue
+	data.append(red(popt[0])) # av daily revenue
+	print type(popt[0])
 	anrev.append(popt[0]) # anual estimate revenue
-	data.append(str(sigma)) # volatility
+	data.append(red(sigma)) # volatility
 	netsigma.append(sigma)# GBM save
-	data.append(str(y[-1]))	# today value
+	data.append(red(y[-1]))	# today value
 	networth.append(y[-1])
-	data.append(str(np.round_((y[-1]*0.025)/popt[0],0)))	#trading penalty
+	data.append(red(np.round_((y[-1]*0.025)/popt[0],0)))	#trading penalty
 	
 	# drop or keep analysis
 	data.append(DK(flist[i]))
@@ -222,12 +240,12 @@ for i in range(len(stock)):
 	
 	# dump analysis results
 	data2.append(stock[i]) # label
-	data2.append(str(popt[0])) # av daily revenue
+	data2.append(red(popt[0])) # av daily revenue
 	#anrev.append(popt[0]) # anual estimate revenue
-	data2.append(str(sigma)) # volatility
-	data2.append(str(y[-1]))	# today value
+	data2.append(red(sigma)) # volatility
+	data2.append(red(y[-1]))	# today value
 	#networth.append(y[-1])
-	data2.append(str(np.round_((y[-1]*0.025)/popt[0],0)))	#trading penalty
+	data2.append(red(np.round_((y[-1]*0.025)/popt[0],0)))	#trading penalty
 	
 	# drop or keep analysis
 	data2.append(DK(flist[i]))
@@ -269,12 +287,12 @@ for i in range(len(stock)):
 	
 	# dump analysis results
 	data3.append(stock[i]) # label
-	data3.append(str(popt[0])) # av daily revenue
+	data3.append(red(popt[0])) # av daily revenue
 	#anrev.append(popt[0]) # anual estimate revenue
-	data3.append(str(sigma)) # volatility
-	data3.append(str(y[-1]))	# today value
+	data3.append(red(sigma)) # volatility
+	data3.append(red(y[-1]))	# today value
 	#networth.append(y[-1])
-	data3.append(str(np.round_((y[-1]*0.025)/popt[0],0)))	#trading penalty
+	data3.append(red(np.round_((y[-1]*0.025)/popt[0],0)))	#trading penalty
 	
 	# drop or keep analysis
 	data3.append(DK(flist[i]))
@@ -313,12 +331,12 @@ for i in range(len(stock)):
 	
 	# dump analysis results
 	data4.append(stock[i]) # label
-	data4.append(str(popt[0])) # av daily revenue
+	data4.append(red(popt[0])) # av daily revenue
 	#anrev.append(popt[0]) # anual estimate revenue
-	data4.append(str(sigma)) # volatility
-	data4.append(str(y[-1]))	# today value
+	data4.append(red(sigma)) # volatility
+	data4.append(red(y[-1]))	# today value
 	#networth.append(y[-1])
-	data4.append(str(np.round_((y[-1]*0.025)/popt[0],0)))	#trading penalty
+	data4.append(red(np.round_((y[-1]*0.025)/popt[0],0)))	#trading penalty
 	
 	# drop or keep analysis
 	data4.append(DK(flist[i]))
@@ -397,14 +415,24 @@ html_header = u"<h1>Stock market analysis</h1> <p> Legend to the market analysis
 annualrev=np.sum(np.multiply(np.multiply(anrev,prep),252))
 approxnetworth=np.sum(np.round_(np.multiply(networth,prep),2))
 
-html_trailer = u"<h2>Estimated annual revenue</h2> <p> Assuming approximately 252 trading days (in USD): <strong>"+ str(np.round_(np.sum(np.multiply(np.multiply(anrev,prep),252)),2)) +u"</strong> chance to be correct: => 68.27%</p>" + u"<p> todays networth in USD:  <strong>"+ str(np.round_(np.sum(np.multiply(networth,prep)),2)) +u"</strong></p>" + u"<p> Linear Regression Model estimate networth in 252 trading days in USD :  <strong>"+ str(np.round_(annualrev+approxnetworth,2)) +u"</strong></p>"  + u"<p> annual interest rate in %:  <strong>"+ str(np.multiply(np.round_(np.divide(annualrev,approxnetworth),2),100)) +u"</strong> (no transaction costs assumend here & pre tax!)</p>"+ u"<p> Geometric Brownian Motion Model estimate networth in 252 trading days in USD:  <strong>"+ str(GBMestimate) +u"</strong></p>" + u"<p> annual interest rate in %:  <strong>"+ str(np.multiply(np.round_(np.divide(GBMestimate-approxnetworth,approxnetworth),2),100)) +u"</strong> (no transaction costs assumend here & pre tax!)</p>" 
+html_trailer = u"<h2>Estimated annual revenue</h2> <p> Assuming approximately 252 trading days (in USD): <strong>"+ red(np.round_(np.sum(np.multiply(np.multiply(anrev,prep),252)),2)) +u"</strong> chance to be correct: => 68.27%</p>" + u"<p> todays networth in USD:  <strong>"+ red(np.round_(np.sum(np.multiply(networth,prep)),2)) +u"</strong></p>" + u"<p> Linear Regression Model estimate networth in 252 trading days in USD :  <strong>"+ red(np.round_(annualrev+approxnetworth,2)) +u"</strong></p>"  + u"<p> annual interest rate in %:  <strong>"+ red(np.multiply(np.round_(np.divide(annualrev,approxnetworth),2),100)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>"+ u"<p> Geometric Brownian Motion Model estimate networth in 252 trading days in USD:  <strong>"+ red(GBMestimate) +u"</strong></p>" + u"<p> annual interest rate in %:  <strong>"+ red(np.multiply(np.round_(np.divide(GBMestimate-approxnetworth,approxnetworth),2),100)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>" 
 
 content = html_header +u"<p> Analysis performed on 252 trading days period </p>" +data_html1 + u"<p> Analysis performed on 150 trading days period </p>" +data_html2 +u"<p> Analysis performed on 50 trading days period </p>" +data_html3 + u"<p> Analysis performed on 10 trading days period </p>" +data_html4 + html_trailer
 
-redmarker = u"<font color="+u"red"+"><b>!-</b></font>"
-contentr = content.replace(u"-",redmarker)
+#redmarker = u"<font color="+u"red"+"><b>!-</b></font>"
+contentr = content.replace(u"&lt;",u"<")
+contentr = contentr.replace(u"&gt;",u">")
+contentr = contentr.replace(u"<...",u"")
 
 # save data html to file
 Html_file= open("table.html","w")
 Html_file.write(contentr)
 Html_file.close()
+
+historicdata = str(approxnetworth) + u"\t\t" + str(np.round_(annualrev+approxnetworth,2)) + u"\t\t" + str(GBMestimate) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"
+
+if doc:
+	# save data to historic analysis
+	txt_file = open("historicNetworth.txt","a")
+	txt_file.write(historicdata)
+	txt_file.close()
