@@ -391,7 +391,7 @@ def GeometricBrownianMotion(x0, mu, sigma):
 	
 networthGBM = [] # dump for GBM estimate
 for i in range(len(stock)):
-	GeometricBrownianMotion(networth[i],1+anrev[i],netsigma[i])
+	GeometricBrownianMotion(networth[i],anrev[i],netsigma[i])
 	
 
 est = gbm.iloc[-1].values
