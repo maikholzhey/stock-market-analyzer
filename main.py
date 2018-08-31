@@ -388,8 +388,7 @@ def GeometricBrownianMotion(x0, mu, sigma):
 	temp=pd.DataFrame(x0*step.cumprod())
 	global gbm
 	gbm=pd.concat([gbm,temp],axis=1)
-	
-networthGBM = [] # dump for GBM estimate
+
 for i in range(len(stock)):
 	GeometricBrownianMotion(networth[i],anrev[i],netsigma[i])
 	
