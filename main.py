@@ -21,8 +21,8 @@ stockquantity = [1,1,1,1,1,1,1]
 
 # period of analysis
 end = datetime.now()
-start = end - timedelta(days=300)
-doc = False # write to historic log
+start = end - timedelta(days=300) # no meaning with robinhood
+doc = True # write to historic log
 
 # some containers
 flist = [] # stock data series
@@ -388,7 +388,7 @@ def GeometricBrownianMotion(x0, mu, sigma):
 	temp=pd.DataFrame(x0*step.cumprod())
 	global gbm
 	gbm=pd.concat([gbm,temp],axis=1)
-
+	
 for i in range(len(stock)):
 	GeometricBrownianMotion(networth[i],anrev[i],netsigma[i])
 	
@@ -428,7 +428,7 @@ Html_file= open("table.html","w")
 Html_file.write(contentr)
 Html_file.close()
 
-historicdata = str(approxnetworth) + u"\t\t" + str(np.round_(annualrev+approxnetworth,2)) + u"\t\t" + str(GBMestimate) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"
+historicdata = str(np.round_(approxnetworth,2)) + u"\t\t" + str(np.round_(annualrev+approxnetworth,2)) + u"\t\t" + str(GBMestimate) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"
 
 if doc:
 	# save data to historic analysis
