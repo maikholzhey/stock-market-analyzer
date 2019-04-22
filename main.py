@@ -14,15 +14,26 @@ from matplotlib import pylab
 from scipy.optimize import curve_fit
 from datetime import datetime, timedelta
 
+# paths
+import os
+
+# quandl api explore
+import quandl
+# api instructions
+quandl.ApiConfig.api_key = "YOUR_quandl_key"
+end = datetime.now()
+start = end - timedelta(days=365)
+
 #stock of interest
-stock=['V','SAP','JPM','MSFT','AAPL','INTC','MITT']
-colstock=['blue','orange','green','red', 'pink','yellow', 'olive']
-stockquantity = [1,1,1,1,1,1,1]
+stock=['FSE/VOW3_X']#,'SAP','JPM','MSFT','AAPL','INTC','MITT']
+colstock=['blue']#,'orange','green','red', 'pink','yellow', 'olive']
+stockquantity = [1,]#1,1,1,1,1,1]
 
 # period of analysis
 end = datetime.now()
-start = end - timedelta(days=300) # no meaning with robinhood
-doc = True # write to historic log
+start = end - timedelta(days=365) # no meaning with robinhood
+doc = True# write to historic log
+cyg = False# cygdrive/c + path
 
 # some containers
 flist = [] # stock data series
@@ -145,13 +156,11 @@ def DK(f):
 # long analysis
 plt.figure(1)
 for i in range(len(stock)):
-	f = web.DataReader(stock[i], 'robinhood', start, end)
-
-	# nice looking timeseries (DataFrame to panda Series)
-	f = f.reset_index()
-	#f = pd.Series(f.Close.values,f.Date)
-	a = [float(f.close_price.values[ii].encode('ascii')) for ii in range(len(f.close_price.values))]
-	f = pd.Series(a, f.begins_at.values)
+	# frankfurt stock exchange
+	mydata2 = quandl.get('FSE/VOW3_X', start_date = start, end_date = end)
+	f = mydata2.reset_index()
+	# timeseries
+	f = pd.Series(f.Close.values,f.Date)
 
 	print "Start: Year, Month, Day, Time"
 	print str(start)
@@ -345,7 +354,7 @@ for i in range(len(stock)):
 	data4.append(str(prep[i]))
 	
 plt.figure(6)
-for i in [0, 1, 3]:
+for i in [0]:#, 1, 3]:
 	# extract last data and do nonlinear regression
 	y = flist[i].values
 	x = flist[i].index.date #datetime index
@@ -414,7 +423,7 @@ html_header = u"<h1>Stock market analysis</h1> <p> Legend to the market analysis
 annualrev=np.sum(np.multiply(np.multiply(anrev,prep),252))
 approxnetworth=np.sum(np.round_(np.multiply(networth,prep),2))
 
-html_trailer = u"<h2>Estimated annual revenue</h2> <p> Assuming approximately 252 trading days (in USD): <strong>"+ red(np.round_(np.sum(np.multiply(np.multiply(anrev,prep),252)),2)) +u"</strong> chance to be correct: => 68.27%</p>" + u"<p> todays networth in USD:  <strong>"+ red(np.round_(np.sum(np.multiply(networth,prep)),2)) +u"</strong></p>" + u"<p> Linear Regression Model estimate networth in 252 trading days in USD :  <strong>"+ red(np.round_(annualrev+approxnetworth,2)) +u"</strong></p>"  + u"<p> annual interest rate in %:  <strong>"+ red(np.multiply(np.round_(np.divide(annualrev,approxnetworth),2),100)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>"+ u"<p> Geometric Brownian Motion Model estimate networth in 252 trading days in USD:  <strong>"+ red(GBMestimate) +u"</strong></p>" + u"<p> annual interest rate in %:  <strong>"+ red(np.multiply(np.round_(np.divide(GBMestimate-approxnetworth,approxnetworth),2),100)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>" 
+html_trailer = u"<h2>Estimated annual revenue</h2> <p> Assuming approximately 252 trading days (in USD): <strong>"+ red(np.round_(np.sum(np.multiply(np.multiply(anrev,prep),252)),2)) +u"</strong> chance to be correct: => 68.27%</p>" + u"<p> todays networth in USD:  <strong>"+ red(np.round_(np.sum(np.multiply(networth,prep)),2)) +u"</strong></p>" + u"<p> Linear Regression Model estimate networth in 252 trading days in USD :  <strong>"+ red(np.round_(annualrev+approxnetworth,2)) +u"</strong></p>"  + u"<p> annual interest rate in %:  <strong>"+ red(np.round_(np.multiply(np.divide(annualrev,approxnetworth),100),2)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>"+ u"<p> Geometric Brownian Motion Model estimate networth in 252 trading days in USD:  <strong>"+ red(GBMestimate) +u"</strong></p>" + u"<p> annual interest rate in %:  <strong>"+ red(np.round_(np.multiply(np.divide(GBMestimate-approxnetworth,approxnetworth),100),2)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>" 
 
 content = html_header +u"<p> Analysis performed on 252 trading days period </p>" +data_html1 + u"<p> Analysis performed on 150 trading days period </p>" +data_html2 +u"<p> Analysis performed on 50 trading days period </p>" +data_html3 + u"<p> Analysis performed on 10 trading days period </p>" +data_html4 + html_trailer
 
@@ -424,7 +433,11 @@ contentr = contentr.replace(u"&gt;",u">")
 contentr = contentr.replace(u"<...",u"")
 
 # save data html to file
-Html_file= open("table.html","w")
+patht = os.path.abspath("table.html")
+if cyg:
+	patht = "/cygdrive/c"+patht
+	
+Html_file= open(patht,"w")
 Html_file.write(contentr)
 Html_file.close()
 
@@ -432,6 +445,15 @@ historicdata = str(np.round_(approxnetworth,2)) + u"\t\t" + str(np.round_(annual
 
 if doc:
 	# save data to historic analysis
-	txt_file = open("historicNetworth.txt","a")
+	pathh = os.path.abspath("historicNetworth.txt")
+	if cyg:
+		pathh = "/cygdrive/c"+pathh
+		
+	txt_file = open(pathh,"a")
 	txt_file.write(historicdata)
 	txt_file.close()
+	print historicdata
+
+# pyc file
+# import py_compile
+# py_compile.compile('Obs.py')

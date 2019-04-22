@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-n=252 # full year in trading days
-dt=0.000001 # to be somewhat stable in time
+n=252*4  # full year in trading days
+dt=0.001 # to be somewhat stable in time
 
 x=pd.DataFrame()
-np.random.seed(1)
+#np.random.seed(1)
 
 def makeFig():
 	x.columns=['V','SAP','JPM','MSFT', 'AAPL','INTC','MITT']
@@ -24,8 +24,17 @@ def makeFig():
 
 	
 def GBM(x0, mu, sigma):
-	step=np.exp((mu-sigma**2/2)*dt)*np.exp(sigma*np.random.normal(0,np.sqrt(dt),(1,n)))
-	temp=pd.DataFrame(x0*step.cumprod())
+	print 'called'
+	def local(x0,mu,sigma):
+		step=np.exp((mu-sigma**2/2)*dt)*np.exp(sigma*np.random.normal(0,np.sqrt(dt),(1,n)))
+		return [x0*step.cumprod()]
+	for s in range(0,5000):
+		if s == 0:
+			tmp = np.concatenate((local(x0,mu,sigma),local(x0,mu,sigma)),axis = 0)
+		else:
+			tmp = np.concatenate((tmp,local(x0,mu,sigma)),axis = 0)
+	ttt = np.mean(tmp,0)
+	temp=pd.DataFrame(ttt)
 	global x
 	x=pd.concat([x,temp],axis=1)
 	
