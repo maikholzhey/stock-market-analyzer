@@ -20,7 +20,7 @@ import os
 # quandl api explore
 import quandl
 # api instructions
-quandl.ApiConfig.api_key = "Your_api_key"
+quandl.ApiConfig.api_key = "DV8RpAAxoKayzstCQWyq"
 end = datetime.now()
 start = end - timedelta(days=365)
 
@@ -349,6 +349,9 @@ for i in range(len(stock)):
 	
 	# drop or keep analysis
 	data4.append(DK(flist[i]))
+	
+	# BrownianBridge Market estimate: BrownianBridge High/Low
+	# data4.append(mean + std) mean-std ...
 	
 	# portfolio rep
 	data4.append(str(prep[i]))

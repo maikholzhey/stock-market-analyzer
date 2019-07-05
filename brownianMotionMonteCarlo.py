@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import time
 
 # Plot grayscale
 plt.style.use('grayscale')
@@ -11,6 +12,8 @@ n=252  # full year in trading days
 dt=0.00001 # to be somewhat stable in time
 
 x=pd.DataFrame()
+
+startTime = time.time()
 
 #np.random.seed(1)
 
@@ -105,14 +108,17 @@ def sumup():
 	
 	return x
 
+# have 10k samples for proper simulation
 for s in range(1000):	
-	if np.mod(s,50) == 0:
+	if np.mod(s,100) == 0:
 		print('called')
 	x = pd.concat([x,sumup().sum(level=0)],axis=0)
 
 	
 # # plot some shit
 # makeFig()
+
+print(time.time()-startTime)
 	
 plt.plot(np.mean(x,0))
 plt.plot(np.mean(x,0)+np.std(x,0))
