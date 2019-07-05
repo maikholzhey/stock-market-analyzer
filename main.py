@@ -20,7 +20,7 @@ import os
 # quandl api explore
 import quandl
 # api instructions
-quandl.ApiConfig.api_key = ">our_api_key"
+quandl.ApiConfig.api_key = "Your_api_key"
 end = datetime.now()
 start = end - timedelta(days=365)
 
