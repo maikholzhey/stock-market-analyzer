@@ -1,7 +1,7 @@
 # pip install datareader
 import pandas as pd
 pd.core.common.is_list_like = pd.api.types.is_list_like
-import pandas_datareader.data as web
+#import pandas_datareader.data as web
 import matplotlib.pyplot as plt
 import numpy as np
 import time
@@ -20,7 +20,7 @@ import os
 # quandl api explore
 import quandl
 # api instructions
-quandl.ApiConfig.api_key = "YOUR_quandl_key"
+quandl.ApiConfig.api_key = ">our_api_key"
 end = datetime.now()
 start = end - timedelta(days=365)
 
@@ -162,8 +162,8 @@ for i in range(len(stock)):
 	# timeseries
 	f = pd.Series(f.Close.values,f.Date)
 
-	print "Start: Year, Month, Day, Time"
-	print str(start)
+	print("Start: Year, Month, Day, Time")
+	print(str(start))
 	f.plot(label=stock[i],color=colstock[i]);
 	plt.legend()
 	plt.ylabel('price in [USD]')
@@ -186,7 +186,7 @@ for i in range(len(stock)):
 		return a*x +b
 
 	popt, pcov = curve_fit(linear_func, d, y)
-	print str(popt)
+	print(str(popt))
 
 	xx = d#-np.max(d)
 	yy= linear_func(xx, *popt)
@@ -202,7 +202,7 @@ for i in range(len(stock)):
 	# dump analysis results
 	data.append(stock[i]) # label
 	data.append(red(popt[0])) # av daily revenue
-	print type(popt[0])
+	print(type(popt[0]))
 	anrev.append(popt[0]) # anual estimate revenue
 	data.append(red(sigma)) # volatility
 	netsigma.append(sigma)# GBM save
@@ -234,7 +234,7 @@ for i in range(len(stock)):
 		return a*x +b
 
 	popt, pcov = curve_fit(linear_func, d, y)
-	print str(popt)
+	print(str(popt))
 
 	xx = d#-np.max(d)
 	yy= linear_func(xx, *popt)
@@ -281,7 +281,7 @@ for i in range(len(stock)):
 		return a*x +b
 
 	popt, pcov = curve_fit(linear_func, d, y)
-	print str(popt)
+	print(str(popt))
 
 	xx = d#-np.max(d)
 	yy= linear_func(xx, *popt)
@@ -325,7 +325,7 @@ for i in range(len(stock)):
 		return a*x +b
 
 	popt, pcov = curve_fit(linear_func, d, y)
-	print str(popt)
+	print(str(popt))
 
 	xx = d#-np.max(d)
 	yy= linear_func(xx, *popt)
@@ -369,7 +369,7 @@ for i in [0]:#, 1, 3]:
 		return a*x +b
 
 	popt, pcov = curve_fit(linear_func, d, y)
-	print str(popt)
+	print(str(popt))
 
 	xx = d#-np.max(d)
 	yy = linear_func(xx, *popt)
@@ -452,7 +452,7 @@ if doc:
 	txt_file = open(pathh,"a")
 	txt_file.write(historicdata)
 	txt_file.close()
-	print historicdata
+	print(historicdata)
 
 # pyc file
 # import py_compile

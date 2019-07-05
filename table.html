@@ -1,0 +1,101 @@
+<h1>Stock market analysis</h1> <p> Legend to the market analysis result </p> <ul>  <li>Column_0 = stock of interest </li>  <li>Column_1 = average daily profit in USD</li> <li>Column_2 = volatility in USD (remains within bound: chance => 68.27%; 2 sigma => 95.45 %) </li><li>Column_3 = value today in USD </li><li>Column_4 = trading penalty in days (2.5% transaction cost assumed) </li><li>Column_5 = KEEP or DROP indication (NotImplemented yet) </li><li>Column_6 = portfolio representaion in QTY </li></ul><p> Analysis performed on 252 trading days period </p><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Column_0</th>
+      <th>Column_1</th>
+      <th>Column_2</th>
+      <th>Column_3</th>
+      <th>Column_4</th>
+      <th>Column_5</th>
+      <th>Column_6</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>FSE/VOW3_X</td>
+      <td>0.013529976827209356</td>
+      <td>5.394730309764129</td>
+      <td>145.92</td>
+      <td>270.0</td>
+      <td>KEEP</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table><p> Analysis performed on 150 trading days period </p><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Column_0</th>
+      <th>Column_1</th>
+      <th>Column_2</th>
+      <th>Column_3</th>
+      <th>Column_4</th>
+      <th>Column_5</th>
+      <th>Column_6</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>FSE/VOW3_X</td>
+      <td>0.007153029021346846</td>
+      <td>5.277274791657781</td>
+      <td>145.92</td>
+      <td>510.0</td>
+      <td>KEEP</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table><p> Analysis performed on 50 trading days period </p><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Column_0</th>
+      <th>Column_1</th>
+      <th>Column_2</th>
+      <th>Column_3</th>
+      <th>Column_4</th>
+      <th>Column_5</th>
+      <th>Column_6</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>FSE/VOW3_X</td>
+      <td><font color=red><b>-0.36654885954679917</b></f...</td>
+      <td>6.542144981579052</td>
+      <td>145.92</td>
+      <td><font color=red><b>-10.0</b></font></td>
+      <td>KEEP</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table><p> Analysis performed on 10 trading days period </p><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Column_0</th>
+      <th>Column_1</th>
+      <th>Column_2</th>
+      <th>Column_3</th>
+      <th>Column_4</th>
+      <th>Column_5</th>
+      <th>Column_6</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>FSE/VOW3_X</td>
+      <td>0.6770909090902097</td>
+      <td>2.3503701836093804</td>
+      <td>145.92</td>
+      <td>5.0</td>
+      <td>KEEP</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table><h2>Estimated annual revenue</h2> <p> Assuming approximately 252 trading days (in USD): <strong>3.41</strong> chance to be correct: => 68.27%</p><p> todays networth in USD:  <strong>145.92</strong></p><p> Linear Regression Model estimate networth in 252 trading days in USD :  <strong>149.33</strong></p><p> annual interest rate in %:  <strong>2.34</strong> (no transaction costs assumed here & pre tax!)</p><p> Geometric Brownian Motion Model estimate networth in 252 trading days in USD:  <strong>160.65</strong></p><p> annual interest rate in %:  <strong>10.09</strong> (no transaction costs assumed here & pre tax!)</p>
