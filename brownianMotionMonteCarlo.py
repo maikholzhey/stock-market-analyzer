@@ -50,60 +50,60 @@ def GMBstochVolal(x0,mu,sigma,sigmasigma):
 
 def sumup():
 	x=pd.DataFrame()
-	# VISA
-	x0 = 107.4# start value
-	mu = 1.15# estimate
-	sigma = 11.79# volatility
+	# # VISA
+	# x0 = 107.4# start value
+	# mu = 1.15# estimate
+	# sigma = 11.79# volatility
 
-	temp = GBM(x0, mu, sigma)
-	x=pd.concat([x,temp],axis=0)
+	# temp = GBM(x0, mu, sigma)
+	# x=pd.concat([x,temp],axis=0)
 		
-	# SAP
-	x0 = 113.21# start value
-	mu = 1.03# estimate
-	sigma = 5.16# volatility
+	# # SAP
+	# x0 = 113.21# start value
+	# mu = 1.03# estimate
+	# sigma = 5.16# volatility
 
-	temp = GBM(x0, mu, sigma)
-	x=pd.concat([x,temp],axis=0)
+	# temp = GBM(x0, mu, sigma)
+	# x=pd.concat([x,temp],axis=0)
 	
-	# JPM
-	x0 = 95.224# start value
-	mu = 1.083# estimate
-	sigma = 7.88# volatility
+	# # JPM
+	# x0 = 95.224# start value
+	# mu = 1.083# estimate
+	# sigma = 7.88# volatility
 
-	temp = GBM(x0, mu, sigma)
-	x=pd.concat([x,temp],axis=0)
+	# temp = GBM(x0, mu, sigma)
+	# x=pd.concat([x,temp],axis=0)
 
-	# MSFT
-	x0 = 74.72# start value
-	mu = 1.14# estimate
-	sigma =10.469# volatility
+	# # MSFT
+	# x0 = 74.72# start value
+	# mu = 1.14# estimate
+	# sigma =10.469# volatility
 
-	temp = GBM(x0, mu, sigma)
-	x=pd.concat([x,temp],axis=0)
+	# temp = GBM(x0, mu, sigma)
+	# x=pd.concat([x,temp],axis=0)
 
 	# # AAPL
 	# x0 = 173.332# start value
 	# mu = 1.184# estimate
 	# sigma = 15.6109# volatility
 
-	temp = GBM(x0, mu, sigma)
-	x=pd.concat([x,temp],axis=0)
+	# temp = GBM(x0, mu, sigma)
+	# x=pd.concat([x,temp],axis=0)
 
-	# INTC
-	x0 = 32.4168# start value
-	mu = 1.0641# estimate
-	sigma = 5.6348# volatility
+	# # INTC
+	# x0 = 32.4168# start value
+	# mu = 1.0641# estimate
+	# sigma = 5.6348# volatility
 
-	temp = GBM(x0, mu, sigma)
-	x=pd.concat([x,temp],axis=0)
+	# temp = GBM(x0, mu, sigma)
+	# x=pd.concat([x,temp],axis=0)
 
 	# MITT
 	x0 = 17.23028# start value
 	mu = 1.006119# estimate
 	sigma = 0.9179# volatility
 
-	GBM(x0, mu, sigma)
+	temp = GBM(x0, mu, sigma)
 	x=pd.concat([x,temp],axis=0)
 	
 	return x
