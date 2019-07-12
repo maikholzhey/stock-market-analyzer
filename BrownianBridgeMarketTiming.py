@@ -100,7 +100,7 @@ def sumup():
 	mu = 1.006119# estimate
 	sigma = 0.9179# volatility
 
-	GBM(x0, mu, sigma)
+	temp = GBM(x0, mu, sigma)
 	x=pd.concat([x,temp],axis=0)
 	
 	return x
