@@ -20,7 +20,7 @@ import os
 # quandl api explore
 import quandl
 # api instructions
-quandl.ApiConfig.api_key = "YOUR_API_KEY"
+quandl.ApiConfig.api_key = "DV8RpAAxoKayzstCQWyq"
 end = datetime.now()
 start = end - timedelta(days=365)
 
@@ -60,7 +60,7 @@ def color_negative_red(val):
     return 'color: %s' % color
 
 def red(a):
-	if int(np.multiply(a,1000000000)) < 0:
+	if a < 0.:
 		return u"<font color="+u"red"+"><b>"+str(a)+u"</b></font>"
 	else:
 		return str(a)
@@ -442,6 +442,9 @@ if cyg:
 	
 Html_file= open(patht,"w")
 Html_file.write(contentr)
+# add date
+dateInfo = u"<p><i>" + "{:%B %d, %Y}".format(datetime.now()) + u"</i></p><p> &copy mh </p>"
+Html_file.write(dateInfo)
 Html_file.close()
 
 historicdata = str(np.round_(approxnetworth,2)) + u"\t\t" + str(np.round_(annualrev+approxnetworth,2)) + u"\t\t" + str(GBMestimate) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"

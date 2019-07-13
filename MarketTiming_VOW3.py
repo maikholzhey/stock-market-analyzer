@@ -10,24 +10,28 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-# paths
-import os
+# general purpose
+import sys, os
+import time
+
+# clock the execution
+startTime = time.time()
 
 # Plot grayscale
 plt.style.use('grayscale')
 
 # api instructions
-quandl.ApiConfig.api_key = "YOUR_API_KEY"
+quandl.ApiConfig.api_key = "DV8RpAAxoKayzstCQWyq"
 end = datetime.now()
-start = end - timedelta(days=245)
+start = end - timedelta(days=365)
 
 # frankfurt stock exchange
-mydata = quandl.get('FSE/SIX2_X', start_date = start, end_date = end)
+mydata = quandl.get('FSE/WAC_X', start_date = start, end_date = end)
 f = mydata.reset_index()
 
 # timeseries
 plt.figure(1)
-plt.title("FSE/SIX2_X")
+plt.title("FSE/WAC_X")
 f = pd.Series(f.Close.values,f.Date)
 f.plot()
 
@@ -57,7 +61,7 @@ x0 = yy[0]
 days= xx-np.max(d)
 	
 plt.figure(2)
-plt.plot(days, y,label='FSE/SIX2_X')
+plt.plot(days, y,label='FSE/WAC_X')
 plt.plot(days, yy,label='linear reg')
 plt.plot(days, yy + sigma,label='mean + std',linestyle='dashed')
 plt.plot(days, yy - sigma,label='mean - std',linestyle='dashed')
@@ -69,7 +73,7 @@ plt.ylabel('price in [EUR]')
 ##################################
 
 n=len(x)  # full year in trading days
-dt=0.00001 # to be somewhat stable in time
+dt=0.00001 # to be somewhat stable in time [Euler Discretization :: Variation of the Wiener]
 
 CC=pd.DataFrame()
 
@@ -80,16 +84,10 @@ def GBM(x0, mue, sigma, n, dt):
 		return [x0*step.cumprod()]
 	return pd.DataFrame(local(x0,mue,sigma))
 
-def sumup(x0,mue, sigma, n, dt):
-	x=pd.DataFrame()
-	temp = GBM(x0, mue, sigma, n, dt)
-	x=pd.concat([x,temp],axis=0)	
-	return x
-
-for s in range(1000):	
+for s in range(1000):	# candidate for GPU massive parallelization!!! (numba.cuda.random.)
 	if np.mod(s,200) == 0:
 		print('called')
-	CC = pd.concat([CC,sumup(x0,mue, sigma, n, dt).sum(level=0)],axis=0)
+	CC = pd.concat([CC,GBM(x0,mue, sigma, n, dt)],axis=0)
 
 # drift correction
 CC = CC + linear_func(xx, popt[0],0)
@@ -97,12 +95,70 @@ q = [5,95]
 CoInt = np.percentile(CC,q,axis=0)
 
 plt.figure(3)
-plt.plot(days, y,label='FSE/SIX2_X')
+plt.plot(days, y,label='FSE/WAC_X')
 plt.plot(days,np.mean(CC,0) ,label='mean')
 plt.plot(days,CoInt[0].flatten(),color='grey',label='perc5',linestyle='dashed')
 plt.plot(days,CoInt[1].flatten(),color='grey',label='perc95',linestyle='dashed')
 plt.legend()
-plt.title('Browian Bridge')
+plt.title('Brownian Bridge')
 plt.ylabel('price in [EUR]')
+
+print("GBM worst")
+GBMworst = CoInt[0].flatten()[-1]
+print(GBMworst)
+print("GBM best")
+GBMbest = CoInt[1].flatten()[-1]
+print(GBMbest)
+print("end price yesterday")
+endPrice = y[-1]
+print(endPrice)
+
+##########################
+### Buy-Keep-Drop ########
+##########################
+
+def DK(worst,best,endPrice):
+	if endPrice > np.multiply(best,0.8):
+		return u"<font color="+u"red"+"><b>"+u"SELL"+u"</b></font>"
+	if endPrice < np.multiply(worst,1.2):
+		return u"<font color="+u"green"+"><b>"+u"BUY"+u"</b></font>"
+	else:
+		return u"<font color="+u"yellow"+"><b>"+u"KEEP"+u"</b></font>"
+		
+print(DK(GBMworst,GBMbest,endPrice))
+
+print("overall time")
+print(str(time.time() - startTime) + u"sec")
+
+# popt[0] in relation to total stock price to have a relative profitability
+
+# run GBMbest and GBMworst case analysis for 1y prediction of entire portfolio
+
+### MPI setting for each stock
+### ==========================
+# from multiprocessing import Pool
+# MPIbase = list()
+
+# for i in range(len(samples.T)):
+	# if np.mod(i,NoProcess) == 0:
+		# if i+NoProcess<len(samples.T):
+			# MPIbase.append(samples.T[i:i+NoProcess])
+		# else:
+			# MPIbase.append(samples.T[i:len(samples.T)])
+
+# u_mc = list()
+
+# for i in range(len(MPIbase)):
+	# # start asynchronous child processes
+	# result = dict()
+	# resKey = 0
+	# for s in MPIbase[i]:
+		# result[str(resKey)] = pool.apply_async(u, (s[0], LyMax, sig, tdt, fsig, dftM, window, dtmax, nx , ny , nz, s[1] , boundaryConditions,))
+		# resKey += 1
+	# # collect results
+	# resKey = 0
+	# for s in MPIbase[i]:			
+		# u_mc.append(result[str(resKey)].get())
+		# resKey += 1
 
 plt.show()
