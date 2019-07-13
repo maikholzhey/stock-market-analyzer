@@ -26,9 +26,9 @@ def GBM(x0, mue, sigma, n, dt):
 	return pd.DataFrame(local(x0,mue,sigma))
 	
 def DK(worst,best,endPrice):
-	if endPrice > np.multiply(best,0.95):
+	if endPrice > np.multiply(best,1):
 		return u"<font color="+u"red"+"><b>"+u"SELL"+u"</b></font>"
-	if endPrice < np.multiply(worst,1.05):
+	if endPrice < np.multiply(worst,1):
 		return u"<font color="+u"green"+"><b>"+u"BUY"+u"</b></font>"
 	else:
 		return u"<font color="+u"gold"+"><b>"+u"KEEP"+u"</b></font>"
@@ -82,12 +82,12 @@ def StockAnalysis(StockOfInterest,stock, prep, TimeFrame, iter):
 
 	CC=pd.DataFrame()
 
-	for s in range(1000):	# candidate for GPU massive parallelization!!! (numba.cuda.random.)
+	for s in range(10000):	# candidate for GPU massive parallelization!!! (numba.cuda.random.)
 		CC = pd.concat([CC,GBM(x0,mue, sigma, n, dt)],axis=0)
 
 	# drift correction
 	CC = CC + linear_func(d, popt[0],0)
-	q = [5,95]
+	q = [10,90]
 	CoInt = np.percentile(CC,q,axis=0)
 
 	
@@ -108,51 +108,7 @@ def StockAnalysis(StockOfInterest,stock, prep, TimeFrame, iter):
 	
 def generate_html_with_table(data, columns_or_rows = 1, \
                              column_name_prefix = 'Column', \
-                             span_axis = 1, \
-                             showOutput = True):
-    """
-    This function returns a pandas.DataFrame object and a 
-    generated html from the data based on user specifications.
-    
-    #Example:
-      data_html, data_df = generate_html_with_table(data, columns_or_rows, column_name_prefix, span_axis, showOutput)
-      # To suppress output and skip the DataFrame:
-      # span data along a row first
-        columns = 4
-        columns_or_rows = columns
-        data_html, _ = generate_html_with_table(data, columns_or_rows, column_name_prefix, 1, False)  
-      # span data along a column first
-        rows = 4
-        columns_or_rows = rows
-        data_html, _ = generate_html_with_table(data, columns_or_rows, column_name_prefix, 0, False)   
-      
-    # Inputs: 
-        1. data:               Data
-           (dtype: list)
-           
-      **Optional Input Parameters:**
-        2. columns_or_rows:            Number of Columns or rows
-           (dtype: int)                columns: span_axis = 1
-           (DEFAULT: 1)                rows:    span_axis = 0
-        3. column_name_prefix: The Prefix for Column headers
-           (dtype: string)
-           (DEFAULT: 'Column')
-        4. span_axis:          The direction along which the elements span.
-           (dtype: int)        span_axis = 0 (span along 1st column, then 2nd column and so on)
-           (DEFAULT: 1)        span_axis = 1 (span along 1st row, then 2nd row and so on)
-        5. showOutput:         (True/False) Whether to show output or not. Use 
-           (dtype: boolean)                   False to suppress printing output.
-           (DEFAULT: True)
-                                                              
-    # Outputs:
-        data_html: generated html
-        data_df:   generated pandas.DataFrame object
-        
-    # Author: Sugato Ray 
-    Github: https://github.com/sugatoray
-    Repository/Project: CodeSnippets
-    
-    """
+                             span_axis = 1):
     # Calculate number of elements in the list: data
     elements = len(data)
     # Calculate the number of rows/columns needed
@@ -177,15 +133,6 @@ def generate_html_with_table(data, columns_or_rows = 1, \
     data_df = pd.DataFrame(data_array, columns = column_names) 
     # Create HTML from the DataFrame
     data_html = data_df.to_html()
-    if showOutput:
-        print('Elements: {}\nColumns: {}\nRows: {}'.format(elements, \
-                                                           columns, \
-                                                           rows))
-        print('Column Names: {}'.format(column_names))
-        print('\nPandas DataFrame: ')
-        #display(data_df)
-        print('\nHTML Generated: \n\n' + data_html)
-        
     return (data_html, data_df)
 	
 ###########################################
@@ -199,9 +146,9 @@ if __name__ == '__main__':
 	# ==========================
 		
 	#stock of interest
-	stock=['FSE/VOW3_X','FSE/WAC_X','FSE/SIX2_X']#,'SAP','JPM','MSFT','AAPL','INTC','MITT']
-	colstock=['blue','orange','green']#'red', 'pink','yellow', 'olive']
-	stockquantity = [1,1,1]#,1,1,1,1]
+	stock=['FSE/VOW3_X','FSE/WAC_X','FSE/SIX2_X','FSE/ZO1_X','FSE/EON_X','FSE/SKB_X']#,'SAP','JPM','MSFT','AAPL','INTC','MITT']
+	#colstock=['blue','orange','red', 'pink','yellow', 'olive']
+	stockquantity = [1,1,1,1,1,1]
 
 	# some containers
 	flist = [] # stock data series
@@ -228,24 +175,24 @@ if __name__ == '__main__':
 
 	# Download
 	plt.figure(1)
+	print("Downloading data...")
 	for i in range(len(stock)):
-		print(stock[i])
 		# frankfurt stock exchange
 		mydata = quandl.get(stock[i], start_date = start, end_date = end)
 		f = mydata.reset_index()
 		# timeseries
 		f = pd.Series(f.Close.values,f.Date)
-		f.plot(label=stock[i],color=colstock[i]);
+		f.plot(label=stock[i])
 		plt.legend()
 		plt.ylabel('price in [USD]')
 		# dump to container
 		flist.append(f)
 
-
+	#plt.show()
 		
 	## MPI setting for each stock
 	## ==========================
-	NoProcess = 3
+	NoProcess = 6
 	# --------------------------
 	# MPI split
 	pool = Pool(processes=NoProcess)         # start worker processes
@@ -263,7 +210,7 @@ if __name__ == '__main__':
 				MPIbase.append(iterate[i:len(stock)])
 	
 	for k in range(len(TimeFrame)):
-		print(k)
+		print(u"Analysis on " + str(TimeFrame[k]) + u" trading days...")
 		for i in range(len(MPIbase)):
 			# start asynchronous child processes
 			result = dict()
@@ -278,6 +225,7 @@ if __name__ == '__main__':
 				resKey += 1
 				
 		
+	print("Writing results to file...")
 	
 	#data = ['one','two','three','four','five','six','seven','eight','nine']
 	columns = 9                   # Number of Columns
@@ -287,12 +235,12 @@ if __name__ == '__main__':
 	showOutput = False            # Use False to suppress printing output
 
 	# Generate HTML
-	data_html1, data_df1 = generate_html_with_table(DataDump[0], columns_or_rows, column_name_prefix, span_axis, showOutput)
-	data_html2, data_df1 = generate_html_with_table(DataDump[1], columns_or_rows, column_name_prefix, span_axis, showOutput)
-	data_html3, data_df1 = generate_html_with_table(DataDump[2], columns_or_rows, column_name_prefix, span_axis, showOutput)
-	data_html4, data_df1 = generate_html_with_table(DataDump[3], columns_or_rows, column_name_prefix, span_axis, showOutput)
+	data_html1, data_df1 = generate_html_with_table(DataDump[0], columns_or_rows, column_name_prefix, span_axis)
+	data_html2, data_df1 = generate_html_with_table(DataDump[1], columns_or_rows, column_name_prefix, span_axis)
+	data_html3, data_df1 = generate_html_with_table(DataDump[2], columns_or_rows, column_name_prefix, span_axis)
+	data_html4, data_df1 = generate_html_with_table(DataDump[3], columns_or_rows, column_name_prefix, span_axis)
 
-	html_header = u"<h1>Stock market analysis</h1>"
+	html_header = u"<h1>Stock market analysis</h1> <p><i> Frankfurt Stock Exchange</p></i>"
 	
 	#annualrev=np.sum(np.multiply(np.multiply(anrev,prep),252))
 	#approxnetworth=np.sum(np.round_(np.multiply(networth,prep),2))
@@ -316,6 +264,6 @@ if __name__ == '__main__':
 	Html_file.write(dateInfo)
 	Html_file.close()
 
-	print("overall time")
+	print("finished in overall time")
 	print(str(time.time() - startTime) + u"sec")
 	sys.exit(0)
