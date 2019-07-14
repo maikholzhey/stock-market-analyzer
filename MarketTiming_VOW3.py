@@ -25,8 +25,9 @@ quandl.ApiConfig.api_key = "DV8RpAAxoKayzstCQWyq"
 end = datetime.now()
 start = end - timedelta(days=365)
 
+wkn = 'FSE/EON_X'
 # frankfurt stock exchange
-mydata = quandl.get('FSE/WAC_X', start_date = start, end_date = end)
+mydata = quandl.get(wkn, start_date = start, end_date = end)
 f = mydata.reset_index()
 
 # timeseries
@@ -61,7 +62,7 @@ x0 = yy[0]
 days= xx-np.max(d)
 	
 plt.figure(2)
-plt.plot(days, y,label='FSE/WAC_X')
+plt.plot(days, y,label=wkn)
 plt.plot(days, yy,label='linear reg')
 plt.plot(days, yy + sigma,label='mean + std',linestyle='dashed')
 plt.plot(days, yy - sigma,label='mean - std',linestyle='dashed')
@@ -91,14 +92,14 @@ for s in range(1000):	# candidate for GPU massive parallelization!!! (numba.cuda
 
 # drift correction
 CC = CC + linear_func(xx, popt[0],0)
-q = [5,95]
+q = [10,90]
 CoInt = np.percentile(CC,q,axis=0)
 
 plt.figure(3)
-plt.plot(days, y,label='FSE/WAC_X')
+plt.plot(days, y,label=wkn)
 plt.plot(days,np.mean(CC,0) ,label='mean')
-plt.plot(days,CoInt[0].flatten(),color='grey',label='perc5',linestyle='dashed')
-plt.plot(days,CoInt[1].flatten(),color='grey',label='perc95',linestyle='dashed')
+plt.plot(days,CoInt[0].flatten(),color='grey',label='perc10',linestyle='dashed')
+plt.plot(days,CoInt[1].flatten(),color='grey',label='perc90',linestyle='dashed')
 plt.legend()
 plt.title('Brownian Bridge')
 plt.ylabel('price in [EUR]')
@@ -118,9 +119,9 @@ print(endPrice)
 ##########################
 
 def DK(worst,best,endPrice):
-	if endPrice > np.multiply(best,0.8):
+	if endPrice > np.multiply(best,1):
 		return u"<font color="+u"red"+"><b>"+u"SELL"+u"</b></font>"
-	if endPrice < np.multiply(worst,1.2):
+	if endPrice < np.multiply(worst,1):
 		return u"<font color="+u"green"+"><b>"+u"BUY"+u"</b></font>"
 	else:
 		return u"<font color="+u"yellow"+"><b>"+u"KEEP"+u"</b></font>"

@@ -26,9 +26,9 @@ def GBM(x0, mue, sigma, n, dt):
 	return pd.DataFrame(local(x0,mue,sigma))
 	
 def DK(worst,best,endPrice):
-	if endPrice > np.multiply(best,1):
+	if endPrice > best:
 		return u"<font color="+u"red"+"><b>"+u"SELL"+u"</b></font>"
-	if endPrice < np.multiply(worst,1):
+	if endPrice < worst:
 		return u"<font color="+u"green"+"><b>"+u"BUY"+u"</b></font>"
 	else:
 		return u"<font color="+u"gold"+"><b>"+u"KEEP"+u"</b></font>"
@@ -81,8 +81,9 @@ def StockAnalysis(StockOfInterest,stock, prep, TimeFrame, iter):
 	dt=0.00001 # to be somewhat stable in time [Euler Discretization :: Variation of the Wiener]
 
 	CC=pd.DataFrame()
-
-	for s in range(10000):	# candidate for GPU massive parallelization!!! (numba.cuda.random.)
+	
+	# practical Monte Carlo with >10k samples
+	for s in range(1000):	# candidate for GPU massive parallelization!!! (numba.cuda.random.)
 		CC = pd.concat([CC,GBM(x0,mue, sigma, n, dt)],axis=0)
 
 	# drift correction
@@ -106,6 +107,43 @@ def StockAnalysis(StockOfInterest,stock, prep, TimeFrame, iter):
 	
 	return data
 	
+def sumup(flist,stock,prep):
+	"""
+	Portfolio prediction 1 year
+	"""
+	c=pd.DataFrame()
+	
+	for i in range(len(stock)):
+		y = flist[i].values[len(flist[i].values)-252:len(flist[i].values)]
+		x = flist[i].index.date[len(flist[i].values)-252:len(flist[i].values)] #datetime index
+				
+		#calc std
+		sigma = np.std(y)
+		d = np.linspace(1,len(x),len(x))
+		# lin reg
+		popt, pcov = curve_fit(linear_func, d, y)
+
+		yy= linear_func(d, *popt)
+		# GBM
+		mue = 1 + popt[0]
+		x0 = yy[-1] # today
+				
+		n=len(x)  # full year in trading days
+		dt=0.00001 # to be somewhat stable in time [Euler Discretization :: Variation of the Wiener]
+
+		tmp = GBM(x0, mue, sigma, n, dt)
+				
+		# drift correction
+		tmp = tmp + linear_func(d, popt[0],0)
+				
+		# prep
+		tmp = np.multiply(tmp,prep[i])
+				
+		c=pd.concat([c,tmp],axis=0)
+				
+	return c
+
+	
 def generate_html_with_table(data, columns_or_rows = 1, \
                              column_name_prefix = 'Column', \
                              span_axis = 1):
@@ -121,7 +159,7 @@ def generate_html_with_table(data, columns_or_rows = 1, \
     # Generate Column Names
     column_names = [u'Stock of Interest',u'Profit/Day/EndPrice [%]',u'Volatility/EndPrice [%]', \
 					u'TradingPenalty [days] (2.5[%])', u'GBM worst [€]', u'GBM best [€]', \
-					u'End of Day Price [€]', 'Drop-Keep-Buy', 'QTY']
+					u'End of Day Price [€]', 'Sell-Keep-Buy', 'QTY']
     # Convert the data into a numpy array    
     data_array = np.array(data + ['']*(columns*rows - elements))		
     if (span_axis == 0):
@@ -134,6 +172,15 @@ def generate_html_with_table(data, columns_or_rows = 1, \
     # Create HTML from the DataFrame
     data_html = data_df.to_html()
     return (data_html, data_df)
+	
+def PortfolioAnalysis(flist,stock, prep):
+	pp = pd.DataFrame()
+		
+	for s in range(1000):	
+		pp = pd.concat([pp,sumup(flist,stock,prep).sum(level=0)],axis=0)
+		
+
+	return pp
 	
 ###########################################
 ######## Analysis #########################
@@ -148,7 +195,7 @@ if __name__ == '__main__':
 	#stock of interest
 	stock=['FSE/VOW3_X','FSE/WAC_X','FSE/SIX2_X','FSE/ZO1_X','FSE/EON_X','FSE/SKB_X']#,'SAP','JPM','MSFT','AAPL','INTC','MITT']
 	#colstock=['blue','orange','red', 'pink','yellow', 'olive']
-	stockquantity = [1,1,1,1,1,1]
+	stockquantity = [4,1,1,1,1,1]
 
 	# some containers
 	flist = [] # stock data series
@@ -196,73 +243,109 @@ if __name__ == '__main__':
 	# --------------------------
 	# MPI split
 	pool = Pool(processes=NoProcess)         # start worker processes
-	MPIbase = list()
 	
-	iterate = [i for i in range(len(stock))]
-	TimeFrame = [252,150,50,20]
-	DataDump = [data1, data2, data3, data4]
+	# MPIbase = list()
 	
-	for i in range(len(stock)):
-		if np.mod(i,NoProcess) == 0:
-			if i+NoProcess<len(stock):
-				MPIbase.append(iterate[i:i+NoProcess])
-			else:
-				MPIbase.append(iterate[i:len(stock)])
+	# iterate = [i for i in range(len(stock))]
+	# TimeFrame = [252,150,50,20]
+	# DataDump = [data1, data2, data3, data4]
 	
-	for k in range(len(TimeFrame)):
-		print(u"Analysis on " + str(TimeFrame[k]) + u" trading days...")
-		for i in range(len(MPIbase)):
-			# start asynchronous child processes
-			result = dict()
-			resKey = 0
-			for s in MPIbase[i]:
-				result[str(resKey)] = pool.apply_async(StockAnalysis, (flist[s],stock, prep, TimeFrame[k], s))
-				resKey += 1
-			# collect results
-			resKey = 0
-			for s in MPIbase[i]:			
-				DataDump[k] += result[str(resKey)].get()
-				resKey += 1
+	# for i in range(len(stock)):
+		# if np.mod(i,NoProcess) == 0:
+			# if i+NoProcess<len(stock):
+				# MPIbase.append(iterate[i:i+NoProcess])
+			# else:
+				# MPIbase.append(iterate[i:len(stock)])
+	
+	# for k in range(len(TimeFrame)):
+		# print(u"Analysis on " + str(TimeFrame[k]) + u" trading days...")
+		# for i in range(len(MPIbase)):
+			# # start asynchronous child processes
+			# result = dict()
+			# resKey = 0
+			# for s in MPIbase[i]:
+				# result[str(resKey)] = pool.apply_async(StockAnalysis, (flist[s],stock, prep, TimeFrame[k], s))
+				# resKey += 1
+			# # collect results
+			# resKey = 0
+			# for s in MPIbase[i]:			
+				# DataDump[k] += result[str(resKey)].get()
+				# resKey += 1
 				
 		
-	print("Writing results to file...")
+	# print("Writing results to file...")
 	
-	#data = ['one','two','three','four','five','six','seven','eight','nine']
-	columns = 9                   # Number of Columns
-	columns_or_rows = columns
-	column_name_prefix = '' # Prefix for Column headers
-	span_axis = 1                 # Span along a row (1) or a column (0) first
-	showOutput = False            # Use False to suppress printing output
+	# #data = ['one','two','three','four','five','six','seven','eight','nine']
+	# columns = 9                   # Number of Columns
+	# columns_or_rows = columns
+	# column_name_prefix = '' # Prefix for Column headers
+	# span_axis = 1                 # Span along a row (1) or a column (0) first
+	# showOutput = False            # Use False to suppress printing output
 
-	# Generate HTML
-	data_html1, data_df1 = generate_html_with_table(DataDump[0], columns_or_rows, column_name_prefix, span_axis)
-	data_html2, data_df1 = generate_html_with_table(DataDump[1], columns_or_rows, column_name_prefix, span_axis)
-	data_html3, data_df1 = generate_html_with_table(DataDump[2], columns_or_rows, column_name_prefix, span_axis)
-	data_html4, data_df1 = generate_html_with_table(DataDump[3], columns_or_rows, column_name_prefix, span_axis)
+	# # Generate HTML
+	# data_html1, data_df1 = generate_html_with_table(DataDump[0], columns_or_rows, column_name_prefix, span_axis)
+	# data_html2, data_df1 = generate_html_with_table(DataDump[1], columns_or_rows, column_name_prefix, span_axis)
+	# data_html3, data_df1 = generate_html_with_table(DataDump[2], columns_or_rows, column_name_prefix, span_axis)
+	# data_html4, data_df1 = generate_html_with_table(DataDump[3], columns_or_rows, column_name_prefix, span_axis)
 
-	html_header = u"<h1>Stock market analysis</h1> <p><i> Frankfurt Stock Exchange</p></i>"
+	# html_header = u"<h1>Stock market analysis</h1> <p><i> Frankfurt Stock Exchange</p></i>"
 	
-	#annualrev=np.sum(np.multiply(np.multiply(anrev,prep),252))
-	#approxnetworth=np.sum(np.round_(np.multiply(networth,prep),2))
+	# #annualrev=np.sum(np.multiply(np.multiply(anrev,prep),252))
+	# #approxnetworth=np.sum(np.round_(np.multiply(networth,prep),2))
 
-	#html_trailer = u"<h2>Estimated annual revenue</h2> <p> Assuming approximately 252 trading days (in USD): <strong>"+ red(np.round_(np.sum(np.multiply(np.multiply(anrev,prep),252)),2)) +u"</strong> chance to be correct: => 68.27%</p>" + u"<p> todays networth in USD:  <strong>"+ red(np.round_(np.sum(np.multiply(networth,prep)),2)) +u"</strong></p>" + u"<p> Linear Regression Model estimate networth in 252 trading days in USD :  <strong>"+ red(np.round_(annualrev+approxnetworth,2)) +u"</strong></p>"  + u"<p> annual interest rate in %:  <strong>"+ red(np.round_(np.multiply(np.divide(annualrev,approxnetworth),100),2)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>"+ u"<p> Geometric Brownian Motion Model estimate networth in 252 trading days in USD:  <strong>"+ red(GBMestimate) +u"</strong></p>" + u"<p> annual interest rate in %:  <strong>"+ red(np.round_(np.multiply(np.divide(GBMestimate-approxnetworth,approxnetworth),100),2)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>" 
+	# #html_trailer = u"<h2>Estimated annual revenue</h2> <p> Assuming approximately 252 trading days (in USD): <strong>"+ red(np.round_(np.sum(np.multiply(np.multiply(anrev,prep),252)),2)) +u"</strong> chance to be correct: => 68.27%</p>" + u"<p> todays networth in USD:  <strong>"+ red(np.round_(np.sum(np.multiply(networth,prep)),2)) +u"</strong></p>" + u"<p> Linear Regression Model estimate networth in 252 trading days in USD :  <strong>"+ red(np.round_(annualrev+approxnetworth,2)) +u"</strong></p>"  + u"<p> annual interest rate in %:  <strong>"+ red(np.round_(np.multiply(np.divide(annualrev,approxnetworth),100),2)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>"+ u"<p> Geometric Brownian Motion Model estimate networth in 252 trading days in USD:  <strong>"+ red(GBMestimate) +u"</strong></p>" + u"<p> annual interest rate in %:  <strong>"+ red(np.round_(np.multiply(np.divide(GBMestimate-approxnetworth,approxnetworth),100),2)) +u"</strong> (no transaction costs assumed here & pre tax!)</p>" 
 
-	content = html_header +u"<p> Analysis performed on 252 trading days period </p>" +data_html1 + u"<p> Analysis performed on 150 trading days period </p>" +data_html2 +u"<p> Analysis performed on 50 trading days period </p>" +data_html3 + u"<p> Analysis performed on 10 trading days period </p>" +data_html4# + html_trailer
+	# content = html_header +u"<p> Analysis performed on 252 trading days period </p>" +data_html1 + u"<p> Analysis performed on 150 trading days period </p>" +data_html2 +u"<p> Analysis performed on 50 trading days period </p>" +data_html3 + u"<p> Analysis performed on 10 trading days period </p>" +data_html4# + html_trailer
 
-	#redmarker = u"<font color="+u"red"+"><b>!-</b></font>"
-	contentr = content.replace(u"&lt;",u"<")
-	contentr = contentr.replace(u"&gt;",u">")
-	contentr = contentr.replace(u"<...",u"")
+	# #redmarker = u"<font color="+u"red"+"><b>!-</b></font>"
+	# contentr = content.replace(u"&lt;",u"<")
+	# contentr = contentr.replace(u"&gt;",u">")
+	# contentr = contentr.replace(u"<...",u"")
 
-	# save data html to file
-	patht = os.path.abspath("tableUpdate.html")
+	# # save data html to file
+	# patht = os.path.abspath("tableUpdate.html")
 		
-	Html_file= open(patht,"w")
-	Html_file.write(contentr)
-	# add date
-	dateInfo = u"<p><i>" + "{:%B %d, %Y}".format(datetime.now()) + u"</i></p><p> &copy mh </p>"
-	Html_file.write(dateInfo)
-	Html_file.close()
+	# Html_file= open(patht,"w")
+	# Html_file.write(contentr)
+	# # add date
+	# dateInfo = u"<p><i>" + "{:%B %d, %Y}".format(datetime.now()) + u"</i></p><p> &copy mh </p>"
+	# Html_file.write(dateInfo)
+	# Html_file.close()
+	
+	######################################
+	### Portfolio Prediction #############
+	######################################
+	
+	print("Portfolio Prediction...")
+	p = pd.DataFrame()
+		
+	result = dict()
+	resKey = 0
+	
+	iterate = [i for i in range(len(stock))]
+		
+	for i in iterate:
+		# start asynchronous child processes
+		result[str(resKey)] = pool.apply_async(PortfolioAnalysis, (flist,stock, prep))
+		resKey += 1
+	
+	# collect results
+	resKey = 0
+	
+	for i in iterate:
+		p = pd.concat([p,result[str(resKey)].get()],axis=0)
+		resKey += 1
+	
+	plt.figure(2)
+	plt.plot(np.mean(p,0))
+	plt.plot(np.mean(p,0)+np.std(p,0))
+	plt.plot(np.mean(p,0)-np.std(p,0))
+	plt.show()
+	
+	
+	######################################
+	### Networth Logfile #################
+	######################################
 
 	print("finished in overall time")
 	print(str(time.time() - startTime) + u"sec")
