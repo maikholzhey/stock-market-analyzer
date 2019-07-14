@@ -189,9 +189,21 @@ if __name__ == '__main__':
 	# ==========================
 		
 	#stock of interest
-	stock=['FSE/VOW3_X','FSE/WAC_X','FSE/SIX2_X','FSE/ZO1_X','FSE/EON_X','FSE/SKB_X']#,'SAP','JPM','MSFT','AAPL','INTC','MITT']
+	stock=['FSE/ADS_X','FSE/ALV_X','FSE/BAS_X','FSE/BAYN_X','FSE/BEI_X',\
+			'FSE/BMW_X','FSE/CBK_X','FSE/CON_X','FSE/DAI_X','FSE/DBK_X',\
+			'FSE/DPW_X','FSE/EON_X','FSE/FRE_X','FSE/HEI_X','FSE/HEN3_X',\
+			'FSE/LIN_X','FSE/ALV_X','FSE/BAS_X','FSE/LHA_X','FSE/MUV2_X',\
+			'FSE/SIE_X','FSE/TKA_X','FSE/VOW3_X','FSE/VOS_X','FSE/VIB3_X',\
+			'FSE/SAP_X','FSE/MAN_X','FSE/MEO_X','FSE/LEO_X','FSE/WAC_X',\
+			]#DAX
 	#colstock=['blue','orange','red', 'pink','yellow', 'olive']
-	stockquantity = [4,1,1,1,1,1]
+	stockquantity = [3,6,6,6,2,\
+					2,4,2,1,3,\
+					1,5,1,2,3,\
+					5,2,3,2,2,\
+					2,1,5,1,1,\
+					9,1,1,1,1,\
+					]
 
 	# some containers
 	flist = [] # stock data series
@@ -209,7 +221,7 @@ if __name__ == '__main__':
 	plt.style.use('grayscale')
 
 	# api instructions
-	quandl.ApiConfig.api_key = "DV8RpAAxoKayzstCQWyq"
+	quandl.ApiConfig.api_key = "YOUR_API_KEY"
 	end = datetime.now()
 	start = end - timedelta(days=385)
 
@@ -228,11 +240,13 @@ if __name__ == '__main__':
 		# dump to container
 		flist.append(f)
 
+	# Data FSE is someteimes unreliable... 
+	# so better check in detail, or pay for a reliable data source
 	#plt.show()
 		
 	## MPI setting for each stock
 	## ==========================
-	NoProcess = 6
+	NoProcess = 10 # adjust for your machine!
 	# --------------------------
 	# MPI split
 	pool = Pool(processes=NoProcess)         # start worker processes
