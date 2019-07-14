@@ -16,7 +16,7 @@ import time
 from multiprocessing import Pool
 
 # write to historic log file
-doc = False
+doc = True
 
 def linear_func(x, a, b):
 	return a*x +b
@@ -64,7 +64,7 @@ def StockAnalysis(StockOfInterest,stock, prep, TimeFrame, iter):
 	
 	# dump analysis results
 	data.append(stock[iter]) # label
-	data.append(red(popt[0])) # av daily revenue rel to end price
+	data.append(red(popt[0])) # av daily revenue
 		
 	data.append(red(sigma)) # volatility
 	
@@ -103,44 +103,7 @@ def StockAnalysis(StockOfInterest,stock, prep, TimeFrame, iter):
 	data.append(str(prep[iter]))
 	
 	return data
-	
-def sumup(flist,stock,prep):
-	"""
-	Portfolio prediction 1 year
-	"""
-	c=pd.DataFrame()
-	
-	for i in range(len(stock)):
-		y = flist[i].values[len(flist[i].values)-252:len(flist[i].values)]
-		x = flist[i].index.date[len(flist[i].values)-252:len(flist[i].values)] #datetime index
-				
-		#calc std
-		sigma = np.std(y)
-		d = np.linspace(1,len(x),len(x))
-		# lin reg
-		popt, pcov = curve_fit(linear_func, d, y)
-
-		yy= linear_func(d, *popt)
-		# GBM
-		mue = 1 + popt[0]
-		x0 = yy[-1] # today
-				
-		n=len(x)  # full year in trading days
-		dt=0.00001 # to be somewhat stable in time [Euler Discretization :: Variation of the Wiener]
-
-		tmp = GBM(x0, mue, sigma, n, dt)
-				
-		# drift correction
-		# tmp = tmp + linear_func(d, popt[0],0)
-				
-		# prep
-		tmp = np.multiply(tmp,prep[i])
-				
-		c=pd.concat([c,tmp],axis=0)
-				
-	return c
-
-	
+		
 def generate_html_with_table(data, columns_or_rows = 1, \
                              column_name_prefix = 'Column', \
                              span_axis = 1):
@@ -170,13 +133,6 @@ def generate_html_with_table(data, columns_or_rows = 1, \
     data_html = data_df.to_html()
     return (data_html, data_df)
 	
-def PortfolioAnalysis(flist,stock, prep):
-	pp = pd.DataFrame()
-	# practical Monte-Carlo: 10k > 1k * NoProcess
-	for s in range(100):	
-		pp = pd.concat([pp,sumup(flist,stock,prep).sum(level=0)],axis=0)
-		
-	return pp
 	
 ###########################################
 ######## Analysis #########################
@@ -221,7 +177,7 @@ if __name__ == '__main__':
 	plt.style.use('grayscale')
 
 	# api instructions
-	quandl.ApiConfig.api_key = "Your_API_KEY"
+	quandl.ApiConfig.api_key = "YOUR_API_KEY"
 	end = datetime.now()
 	start = end - timedelta(days=385)
 
@@ -345,7 +301,7 @@ if __name__ == '__main__':
 
 	html_header = u"<h1>Stock market analysis</h1> <p><i> Frankfurt Stock Exchange</p></i>"
 	
-	html_trailer = u"<h2>Estimated annual revenue</h2> <p> Todays networth (in EUR): <strong>"+red(networth)+ u"</strong> </p>"#+"<p> Linear Regression Model estimate in 252 trading days (in EUR): <strong>"+red(LRM)+ u"</strong> ("+red(iLRM)+ u"%) </p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMbest)+ u"</strong> ("+red(iBMbest)+ u"%) --- best case</p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMworst)+ u"</strong> ("+red(iBMworst)+ u"%) --- worst case</p>"
+	html_trailer = u"<h2>Networth</h2> <p> Todays networth (in EUR): <strong>"+red(networth)+ u"</strong> </p>"#+"<p> Linear Regression Model estimate in 252 trading days (in EUR): <strong>"+red(LRM)+ u"</strong> ("+red(iLRM)+ u"%) </p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMbest)+ u"</strong> ("+red(iBMbest)+ u"%) --- best case</p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMworst)+ u"</strong> ("+red(iBMworst)+ u"%) --- worst case</p>"
 	
 	content = html_header +u"<p> Analysis performed on 252 trading days period </p>" +data_html1 + u"<p> Analysis performed on 150 trading days period </p>" +data_html2 +u"<p> Analysis performed on 50 trading days period </p>" +data_html3 + u"<p> Analysis performed on 10 trading days period </p>" +data_html4 + html_trailer
 
@@ -368,7 +324,7 @@ if __name__ == '__main__':
 	### Networth Logfile #################
 	######################################
 	
-	historicdata = str(networth) + u"\t\t" #+ str(LRM) + u"\t\t" + str(BMbest) + u"\t\t" + str(BMworst) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"
+	historicdata = str(networth) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"
 
 	if doc:
 		# save data to historic analysis
@@ -382,5 +338,5 @@ if __name__ == '__main__':
 	print("finished in overall time")
 	print(str(time.time() - startTime) + u"sec")
 	
-	plt.show()
+	#plt.show()
 	sys.exit(0)

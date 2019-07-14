@@ -21,7 +21,7 @@ startTime = time.time()
 plt.style.use('grayscale')
 
 # api instructions
-quandl.ApiConfig.api_key = "Your_API_KEY"
+quandl.ApiConfig.api_key = "YOUR_API_KEY"
 end = datetime.now()
 start = end - timedelta(days=365)
 
