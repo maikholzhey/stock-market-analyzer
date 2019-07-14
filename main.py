@@ -239,50 +239,77 @@ if __name__ == '__main__':
 	### Portfolio Prediction #############
 	######################################
 	
-	# print("Portfolio Prediction...")
-	# p = pd.DataFrame()
+	print("Portfolio Prediction...")
+	
+	dataX0 = list()
+	dataMue = list()
+	dataSigma = list()
+	
+	for i in range(len(stock)):
+		y = flist[i].values[len(flist[i].values)-252:len(flist[i].values)]
+		x = flist[i].index.date[len(flist[i].values)-252:len(flist[i].values)] #datetime index
 		
-	# result = dict()
-	# resKey = 0
-	
-	# iterate = [i for i in range(NoProcess)]
+		d = np.linspace(1,len(x),len(x))
+		# lin reg
+		popt, pcov = curve_fit(linear_func, d, y)
 		
-	# for i in iterate:
-		# # start asynchronous child processes
-		# result[str(resKey)] = pool.apply_async(PortfolioAnalysis, (flist,stock, prep))
-		# resKey += 1
+		#  - weighted by prep
+		for j in range(prep[i]):
+			dataSigma.append(np.std(y))
+			dataMue.append(1 + popt[0])
+			dataX0.append(y[-1])
+		
+	##################################
+	### Brownian Bridge
+	##################################
 	
-	# # collect results
-	# resKey = 0
+	n  = 252  # full year in trading days
+	dt = 0.00001 # to be somewhat stable in time [Euler Discretization :: Variation of the Wiener]
 	
-	# for i in iterate:
-		# p = pd.concat([p,result[str(resKey)].get()],axis=0)
-		# resKey += 1
+	mue = np.mean(dataMue)
+	sigma = np.mean(dataSigma)
+	x0 = np.sum(dataX0)
+		
+	p = pd.DataFrame()
 	
-	# plt.figure(2)
-	# plt.plot(np.mean(p,0))
-	# plt.plot(np.mean(p,0)+np.std(p,0))
-	# plt.plot(np.mean(p,0)-np.std(p,0))
+	# practical Monte Carlo with >10k samples
+	for s in range(1000):	# candidate for GPU massive parallelization!!! (numba.cuda.random.)
+		p = pd.concat([p,GBM(x0,mue, sigma, n, dt)],axis=0)
+
+	# drift correction
+	p = p + linear_func(d, mue-1 ,0)
+	q = [10,90]
+	CoInt = np.percentile(p,q,axis=0)
+
 	
+	GBMworst = CoInt[0].flatten()[-1]
+	GBMbest = CoInt[1].flatten()[-1]
+	endPrice = y[-1]
 	
+	plt.figure(2)
+	plt.plot(np.mean(p,0))
+	plt.plot(np.mean(p,0)+np.std(p,0))
+	plt.plot(np.mean(p,0)-np.std(p,0))
+	
+	iterate = [i for i in range(len(stock))]
 	# todays networth
 	networth = 0
 	for i in iterate:
 		networth += np.round_(np.multiply(flist[i].values[-1],prep[i]),2)
 	
-	# # LRM estimate
-	# LRM = np.round_(np.mean(p,0).values[-1],2)
+	# LRM estimate
+	LRM = np.round_(np.mean(p,0).values[-1],2)
 		
-	# # GBM best
-	# BMbest = np.round_(LRM+np.std(p,0).values[-1],2)
+	# GBM best
+	BMbest = np.round_(LRM+np.std(p,0).values[-1],2)
 	
-	# # GBM worst
-	# BMworst = np.round_(LRM-np.std(p,0).values[-1],2)
+	# GBM worst
+	BMworst = np.round_(LRM-np.std(p,0).values[-1],2)
 	
-	# # interest rates
-	# iLRM = np.round_(np.multiply(np.divide(LRM,networth)-1,100),2) 
-	# iBMbest = np.round_(np.multiply(np.divide(BMbest,networth)-1,100),2)
-	# iBMworst = np.round_(np.multiply(np.divide(BMworst,networth)-1,100),2)
+	# interest rates
+	iLRM = np.round_(np.multiply(np.divide(LRM,networth)-1,100),2) 
+	iBMbest = np.round_(np.multiply(np.divide(BMbest,networth)-1,100),2)
+	iBMworst = np.round_(np.multiply(np.divide(BMworst,networth)-1,100),2)
 	
 	print("Writing results to file...")
 	
@@ -301,7 +328,7 @@ if __name__ == '__main__':
 
 	html_header = u"<h1>Stock market analysis</h1> <p><i> Frankfurt Stock Exchange</p></i>"
 	
-	html_trailer = u"<h2>Networth</h2> <p> Todays networth (in EUR): <strong>"+red(networth)+ u"</strong> </p>"#+"<p> Linear Regression Model estimate in 252 trading days (in EUR): <strong>"+red(LRM)+ u"</strong> ("+red(iLRM)+ u"%) </p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMbest)+ u"</strong> ("+red(iBMbest)+ u"%) --- best case</p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMworst)+ u"</strong> ("+red(iBMworst)+ u"%) --- worst case</p>"
+	html_trailer = u"<h2>Networth</h2> <p> Todays networth (in EUR): <strong>"+red(networth)+ u"</strong> </p>"+"<p> Linear Regression Model estimate in 252 trading days (in EUR): <strong>"+red(LRM)+ u"</strong> ("+red(iLRM)+ u"%) </p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMbest)+ u"</strong> ("+red(iBMbest)+ u"%) --- best case</p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMworst)+ u"</strong> ("+red(iBMworst)+ u"%) --- worst case</p>"
 	
 	content = html_header +u"<p> Analysis performed on 252 trading days period </p>" +data_html1 + u"<p> Analysis performed on 150 trading days period </p>" +data_html2 +u"<p> Analysis performed on 50 trading days period </p>" +data_html3 + u"<p> Analysis performed on 10 trading days period </p>" +data_html4 + html_trailer
 
@@ -324,7 +351,7 @@ if __name__ == '__main__':
 	### Networth Logfile #################
 	######################################
 	
-	historicdata = str(networth) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"
+	historicdata = str(networth) + u"\t\t" + str(LRM) + u"\t\t" +str(BMbest) + u"\t" +str(BMworst) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"
 
 	if doc:
 		# save data to historic analysis
