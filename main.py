@@ -16,7 +16,7 @@ import time
 from multiprocessing import Pool
 
 # write to historic log file
-doc = True
+doc = False
 
 def linear_func(x, a, b):
 	return a*x +b
@@ -64,9 +64,9 @@ def StockAnalysis(StockOfInterest,stock, prep, TimeFrame, iter):
 	
 	# dump analysis results
 	data.append(stock[iter]) # label
-	data.append(red(np.multiply(np.divide(popt[0],y[-1]),100))) # av daily revenue rel to end price
+	data.append(red(popt[0])) # av daily revenue rel to end price
 		
-	data.append(red(np.multiply(np.divide(sigma,y[-1]),100))) # volatility
+	data.append(red(sigma)) # volatility
 	
 	data.append(red(np.round_((y[-1]*0.025)/popt[0],0)))	#trading penalty
 	
@@ -131,7 +131,7 @@ def sumup(flist,stock,prep):
 		tmp = GBM(x0, mue, sigma, n, dt)
 				
 		# drift correction
-		tmp = tmp + linear_func(d, popt[0],0)
+		# tmp = tmp + linear_func(d, popt[0],0)
 				
 		# prep
 		tmp = np.multiply(tmp,prep[i])
@@ -154,7 +154,7 @@ def generate_html_with_table(data, columns_or_rows = 1, \
       columns = columns_or_rows
       rows = int(np.ceil(elements/columns))
     # Generate Column Names
-    column_names = [u'Stock of Interest',u'Profit/Day/EndPrice [%]',u'Volatility/EndPrice [%]', \
+    column_names = [u'Stock of Interest',u'Profit/Day [€]',u'Volatility [€]', \
 					u'TradingPenalty [days] (2.5[%])', u'GBM worst [€]', u'GBM best [€]', \
 					u'End of Day Price [€]', 'Sell-Keep-Buy', 'QTY']
     # Convert the data into a numpy array    
@@ -172,7 +172,7 @@ def generate_html_with_table(data, columns_or_rows = 1, \
 	
 def PortfolioAnalysis(flist,stock, prep):
 	pp = pd.DataFrame()
-		
+	# practical Monte-Carlo: 10k > 1k * NoProcess
 	for s in range(100):	
 		pp = pd.concat([pp,sumup(flist,stock,prep).sum(level=0)],axis=0)
 		
@@ -221,7 +221,7 @@ if __name__ == '__main__':
 	plt.style.use('grayscale')
 
 	# api instructions
-	quandl.ApiConfig.api_key = "YOUR_API_KEY"
+	quandl.ApiConfig.api_key = "Your_API_KEY"
 	end = datetime.now()
 	start = end - timedelta(days=385)
 
@@ -283,50 +283,50 @@ if __name__ == '__main__':
 	### Portfolio Prediction #############
 	######################################
 	
-	print("Portfolio Prediction...")
-	p = pd.DataFrame()
+	# print("Portfolio Prediction...")
+	# p = pd.DataFrame()
 		
-	result = dict()
-	resKey = 0
+	# result = dict()
+	# resKey = 0
 	
-	iterate = [i for i in range(NoProcess)]
+	# iterate = [i for i in range(NoProcess)]
 		
-	for i in iterate:
-		# start asynchronous child processes
-		result[str(resKey)] = pool.apply_async(PortfolioAnalysis, (flist,stock, prep))
-		resKey += 1
+	# for i in iterate:
+		# # start asynchronous child processes
+		# result[str(resKey)] = pool.apply_async(PortfolioAnalysis, (flist,stock, prep))
+		# resKey += 1
 	
-	# collect results
-	resKey = 0
+	# # collect results
+	# resKey = 0
 	
-	for i in iterate:
-		p = pd.concat([p,result[str(resKey)].get()],axis=0)
-		resKey += 1
+	# for i in iterate:
+		# p = pd.concat([p,result[str(resKey)].get()],axis=0)
+		# resKey += 1
 	
-	plt.figure(2)
-	plt.plot(np.mean(p,0))
-	plt.plot(np.mean(p,0)+np.std(p,0))
-	plt.plot(np.mean(p,0)-np.std(p,0))
-	#plt.show()
+	# plt.figure(2)
+	# plt.plot(np.mean(p,0))
+	# plt.plot(np.mean(p,0)+np.std(p,0))
+	# plt.plot(np.mean(p,0)-np.std(p,0))
+	
 	
 	# todays networth
 	networth = 0
 	for i in iterate:
 		networth += np.round_(np.multiply(flist[i].values[-1],prep[i]),2)
 	
-	# LRM estimate
-	LRM = np.round_(np.mean(p,0).values[-1],2)
+	# # LRM estimate
+	# LRM = np.round_(np.mean(p,0).values[-1],2)
 		
-	# GBM best
-	BMbest = np.round_(LRM+np.std(p,0).values[-1],2)
+	# # GBM best
+	# BMbest = np.round_(LRM+np.std(p,0).values[-1],2)
 	
-	# GBM worst
-	BMworst = np.round_(LRM-np.std(p,0).values[-1],2)
+	# # GBM worst
+	# BMworst = np.round_(LRM-np.std(p,0).values[-1],2)
 	
-	# interest rates
-	iLRM = np.round_(np.multiply(np.divide(LRM,networth)-1,100),2) 
-	iBMbest = np.round_(np.multiply(np.divide(BMbest,networth)-1,100),2)
-	iBMworst = np.round_(np.multiply(np.divide(BMworst,networth)-1,100),2)
+	# # interest rates
+	# iLRM = np.round_(np.multiply(np.divide(LRM,networth)-1,100),2) 
+	# iBMbest = np.round_(np.multiply(np.divide(BMbest,networth)-1,100),2)
+	# iBMworst = np.round_(np.multiply(np.divide(BMworst,networth)-1,100),2)
 	
 	print("Writing results to file...")
 	
@@ -345,7 +345,7 @@ if __name__ == '__main__':
 
 	html_header = u"<h1>Stock market analysis</h1> <p><i> Frankfurt Stock Exchange</p></i>"
 	
-	html_trailer = u"<h2>Estimated annual revenue</h2> <p> Todays networth (in EUR): <strong>"+red(networth)+ u"</strong> </p>"+"<p> Linear Regression Model estimate in 252 trading days (in EUR): <strong>"+red(LRM)+ u"</strong> ("+red(iLRM)+ u"%) </p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMbest)+ u"</strong> ("+red(iBMbest)+ u"%) --- best case</p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMworst)+ u"</strong> ("+red(iBMworst)+ u"%) --- worst case</p>"
+	html_trailer = u"<h2>Estimated annual revenue</h2> <p> Todays networth (in EUR): <strong>"+red(networth)+ u"</strong> </p>"#+"<p> Linear Regression Model estimate in 252 trading days (in EUR): <strong>"+red(LRM)+ u"</strong> ("+red(iLRM)+ u"%) </p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMbest)+ u"</strong> ("+red(iBMbest)+ u"%) --- best case</p>"+"<p> Geometric Brownian Motion estimate in 252 trading days (in EUR): <strong>"+red(BMworst)+ u"</strong> ("+red(iBMworst)+ u"%) --- worst case</p>"
 	
 	content = html_header +u"<p> Analysis performed on 252 trading days period </p>" +data_html1 + u"<p> Analysis performed on 150 trading days period </p>" +data_html2 +u"<p> Analysis performed on 50 trading days period </p>" +data_html3 + u"<p> Analysis performed on 10 trading days period </p>" +data_html4 + html_trailer
 
@@ -368,7 +368,7 @@ if __name__ == '__main__':
 	### Networth Logfile #################
 	######################################
 	
-	historicdata = str(networth) + u"\t\t" + str(LRM) + u"\t\t" + str(BMbest) + u"\t\t" + str(BMworst) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"
+	historicdata = str(networth) + u"\t\t" #+ str(LRM) + u"\t\t" + str(BMbest) + u"\t\t" + str(BMworst) + u"\t\t" + "{:%B %d, %Y}".format(datetime.now()) + u"\n"
 
 	if doc:
 		# save data to historic analysis
@@ -381,4 +381,6 @@ if __name__ == '__main__':
 
 	print("finished in overall time")
 	print(str(time.time() - startTime) + u"sec")
+	
+	plt.show()
 	sys.exit(0)
