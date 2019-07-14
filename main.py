@@ -42,6 +42,13 @@ def red(a):
 	else:
 		return str(a)
 		
+def PortfolioAnalysis(x0,mue, sigma, n, dt):
+	p = pd.DataFrame()
+	# practical Monte Carlo with >10k = 10 * 1k samples
+	for s in range(1000):	# candidate for GPU massive parallelization!!! (numba.cuda.random.)
+		p = pd.concat([p,GBM(x0,mue, sigma, n, dt)],axis=0)
+	return p
+		
 def StockAnalysis(StockOfInterest,stock, prep, TimeFrame, iter):
 	y = StockOfInterest.values[len(StockOfInterest.values)-TimeFrame:len(StockOfInterest.values)]
 	x = StockOfInterest.index.date[len(StockOfInterest.values)-TimeFrame:len(StockOfInterest.values)] #datetime index
@@ -270,11 +277,19 @@ if __name__ == '__main__':
 	sigma = np.mean(dataSigma)
 	x0 = np.sum(dataX0)
 		
+	# start asynchronous child processes
+	result = dict()
+	resKey = 0
+	for i in range(NoProcess):
+		result[str(resKey)] = pool.apply_async(PortfolioAnalysis, (x0,mue, sigma, n, dt))
+		resKey += 1
+		
 	p = pd.DataFrame()
-	
-	# practical Monte Carlo with >10k samples
-	for s in range(1000):	# candidate for GPU massive parallelization!!! (numba.cuda.random.)
-		p = pd.concat([p,GBM(x0,mue, sigma, n, dt)],axis=0)
+	# collect results
+	resKey = 0
+	for i in range(NoProcess):		
+		p = pd.concat([p,result[str(resKey)].get()],axis=0)
+		resKey += 1
 
 	# drift correction
 	p = p + linear_func(d, mue-1 ,0)
