@@ -276,6 +276,10 @@ if __name__ == '__main__':
 	mue = np.mean(dataMue)
 	sigma = np.mean(dataSigma)
 	x0 = np.sum(dataX0)
+	
+	# maximum threads on the machine: i7-8700
+	NoProcess = 12
+	pool = Pool(processes=NoProcess)         # start worker processes
 		
 	# start asynchronous child processes
 	result = dict()
